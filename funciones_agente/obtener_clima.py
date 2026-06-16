@@ -1,32 +1,28 @@
-# Módulo encargado de la integración con servicios meteorológicos externos
-import requests
+# Módulo encargado de la integración con Selenium para hacer web scraping del clima
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
-def obtener_clima(driver, user_input):
+def obtener_clima(driver, consulta):
     """
-    Obtiene la temperatura actual de una ciudad utilizando el servicio wttr.in.
-    
-    Argumentos:
-        driver: Instancia de Selenium WebDriver (no se usa en esta implementación, pero se mantiene por compatibilidad).
-        user_input: El texto ingresado por el usuario o ya procesado.
-    
-    Retorna:
-        Una cadena con la temperatura o un mensaje de error.
+    Obtiene la temperatura actual de una ciudad buscando en Google con Selenium,
+    usando esperas explícitas para evitar errores de carga.
     """
-    # Intentamos extraer el nombre de la ciudad eliminando palabras clave comunes
-    # Esto ayuda si se le pasa el input completo sin procesar previamente
-    city = user_input.lower().replace("clima", "").replace("temperatura", "").replace("en", "").replace("de", "").strip()
+    ciudad = consulta.lower().replace("clima", "").replace("temperatura", "").replace("en", "").replace("de", "").strip()
     
     try:
-        # Realizamos una petición GET al servicio wttr.in
-        # Usamos el parámetro format=%t para recibir únicamente la temperatura (ej. +25°C)
-        response = requests.get(f"https://wttr.in/{city}?format=%t", timeout=10)
+        # 1. Le decimos al navegador que busque en Google
+        driver.get(f"https://www.google.com/search?q=clima+{ciudad}")
         
-        # Si la respuesta es exitosa (200), devolvemos el texto
-        if response.status_code == 200:
-            return response.text.strip()
-        else:
-            return "No se pudo obtener el clima para esa ubicación (Código de error)."
+        # 2. ESPERA EXPLÍCITA: Le damos hasta 10 segundos para que encuentre el ID 'wob_tm'
+        # Si la página carga lento, esto lo salva de tirar error de inmediato
+        temp_element = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "wob_tm"))
+        )
+        
+        temperatura = temp_element.text
+        return f"La temperatura en {ciudad.title()} es de {temperatura}°"
             
     except Exception as e:
-        # Manejo de excepciones en caso de fallo en la conexión o timeout
-        return f"Error de red al obtener el clima: {e}"
+        # Si después de 10 segundos no lo encuentra, regresamos un mensaje amigable
+        return "No se pudo extraer la temperatura. Es posible que Google esté bloqueando la búsqueda o pidiendo un Captcha."

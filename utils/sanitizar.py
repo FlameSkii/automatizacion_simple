@@ -1,33 +1,23 @@
-# Utilidades para el pre-procesamiento y limpieza de texto
 def sanitizar(name):
     """
-    Limpia y normaliza el input del usuario eliminando artículos, preposiciones y palabras clave 
-    que no forman parte del nombre del sujeto de búsqueda (ej. el nombre de una empresa).
-    
-    Argumentos:
-        name (str): Cadena de texto a sanitizar.
-        
-    Retorna:
-        str: El nombre del sujeto extraído y limpio.
+    Convierte el texto a minúsculas y elimina tildes, diéresis y la letra ñ.
     """
-    # Lista de prefijos que queremos omitir para aislar el nombre real (ej. "precio de apple" -> "apple")
-    prefixes = [
-        'la ', 'el ', 'de ', 'acción ', 'accion ', 
-        'precio de ', 'precio ', 'stock de ', 'stock ',
-        'valor de ', 'valor '
-    ]
+    # 1. Convertimos todo el texto a minúsculas primero
+    name = name.lower()
     
-    # Convertir a minúsculas y quitar espacios en los extremos
-    name = name.lower().strip()
+    # 2. Diccionario con los reemplazos que nos pidió el profe
+    reemplazos = {
+        'á': 'a', 
+        'é': 'e', 
+        'í': 'i', 
+        'ó': 'o', 
+        'ú': 'u',
+        'ü': 'u', # Sin diéresis
+        'ñ': 'n'  # Sin ñ's
+    }
     
-    changed = True
-    # Bucle para eliminar prefijos de forma iterativa 
-    # Esto permite manejar casos como "la accion de apple" eliminando primero "la accion de " y luego el espacio sobrante.
-    while changed:
-        changed = False
-        for p in prefixes:
-            if name.startswith(p):
-                name = name[len(p):].strip()
-                changed = True
-                
+    # 3. Recorremos el diccionario y reemplazamos las letras en el texto
+    for original, nueva in reemplazos.items():
+        name = name.replace(original, nueva)
+        
     return name
